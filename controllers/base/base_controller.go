@@ -2,8 +2,11 @@ package base
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/beego/beego/v2/core/logs"
+	"github.com/beego/beego/v2/core/validation"
 	"github.com/beego/beego/v2/server/web"
 
 	"mall/controllers/base/session"
@@ -13,6 +16,7 @@ type BaseController struct {
 	web.Controller
 
 	IsAuth   bool
+	IsCheck  bool
 	SourceIp string
 }
 
@@ -69,4 +73,63 @@ func (c *BaseController) MyGetSession(name string) (interface{}, bool) {
 		return result, true
 	}
 	return nil, false
+}
+
+func (c *BaseController) InputCheck(obj interface{}) *GeneralResponse {
+	if obj == nil {
+		return ErrSystem
+	}
+
+	c.IsCheck = true
+
+	//parse request parameters
+	if err := c.ParseIParams(obj); err != nil {
+		logs.Warn("parse err: %s", err.Error())
+		return ErrInputData
+	}
+
+	if err := c.VerifyParams(obj); err != nil {
+		logs.Warn("verify err: %s", err.Error())
+		return ErrInputData
+	}
+
+	return nil
+}
+
+func (c *BaseController) ParseIParams(obj interface{}) error {
+	if c.Ctx.Request.Method == http.MethodGet {
+		if err := c.ParseForm(obj); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if len(c.Ctx.Input.RequestBody) == 0 {
+		return nil
+	}
+
+	if err := json.Unmarshal(c.Ctx.Input.RequestBody, obj); err != nil {
+		logs.Warn("unmarshal request body failed, err: %s", err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (c *BaseController) VerifyParams(obj interface{}) error {
+	//verify
+	valid := validation.Validation{}
+	ok, err := valid.RecursiveValid(obj)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		str := ""
+		for _, err := range valid.Errors {
+			str += err.Key + ":" + err.Message + ";"
+		}
+		return fmt.Errorf(str)
+	}
+	return nil
 }

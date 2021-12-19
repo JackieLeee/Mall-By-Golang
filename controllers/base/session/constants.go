@@ -4,6 +4,7 @@ package session
 const (
 	KSessKeyUser      = "sessionUser"
 	KSessKeyCSRFToken = "Mall-CSRFToken"
+	KSessCaptcha      = "sessionCaptcha"
 )
 
 const (

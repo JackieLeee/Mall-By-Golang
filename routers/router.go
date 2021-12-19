@@ -9,7 +9,8 @@ import (
 func init() {
 	ns := web.NewNamespace("/mall",
 		web.NSNamespace("/user",
-			web.NSRouter("/register", &controllers.AccountController{}, "post:UserRegister"),
+			web.NSRouter("/register", &controllers.PassportController{}, "post:UserRegister"),
+			web.NSRouter("/captcha", &controllers.PassportController{}, "get:NewCaptcha"),
 		),
 	)
 	web.AddNamespace(ns)
